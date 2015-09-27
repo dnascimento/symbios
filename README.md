@@ -20,8 +20,7 @@ Create user keys:
 
 Launch CA container injecting the obtained key and expose the port:
 
-`docker run -i -t --name ca -e "USERKEY=XXXXXXXXXXX"`
-
+`docker run -i -t --name ca -e "SYM_USER_KEY=XXXXXXXXXXX"`
 
 Get CA hash key
 ```
@@ -39,5 +38,5 @@ symbios client new-token -key id_rsa
 
 Launch new container
 ```
-docker run -i -t -link ca:ca -e "SYMBIOS_TOKEN=XXXXXXXX" -e "SYMBIOS_HASH=XXXXXXXX" -e "SYMBIOS_CA=ca"
+docker run -i -t -link ca:ca -e "SYM_TOKEN=XXXXXXXX" -e "SYM_CA_HASH=XXXXXXXX" -e "SYM_CA_HOST=ca"
 ```
