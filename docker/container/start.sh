@@ -10,9 +10,9 @@
 #SYM_TOKEN user defined
 #SYM_CA_HASH user defined
 
-: ${SYM_CN:=""}
-: ${SYM_IP_LIST:=""}
-: ${SYM_DOMAIN_LIST:=""}
+: ${SYM_CN:="symbios"}
+: ${SYM_IP_LIST:="-"}
+: ${SYM_DOMAIN_LIST:="-"}
 : ${SYM_ORGANIZATION:=symbios}
 : ${SYM_COUNTRY:=US}
 

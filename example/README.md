@@ -36,7 +36,7 @@ docker run -i -t --link ca:ca --link server:server -e "SYM_TOKEN=<token obtained
 
 On server container:
 ```
-http-server  9000 /etc/secret/id.pem /etc/secret/id_cert.pem /etc/secret/ca_cert.pem
+http-server 9000 /etc/secret/id.pem /etc/secret/id_cert.pem /etc/secret/ca_cert.pem
 ```
 
 On client container:

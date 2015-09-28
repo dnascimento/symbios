@@ -274,7 +274,7 @@ func ListToString(array []string, s string) *string {
 		result += val
 		result += ","
 	}
-	if len(s) > 0 {
+	if len(s) > 0 && s != "-" {
 		result += s
 		result += ","
 	}
