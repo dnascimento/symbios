@@ -1,3 +1,0 @@
-# Symbios Protocol
-
-TODO
