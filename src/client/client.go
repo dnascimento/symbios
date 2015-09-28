@@ -52,7 +52,7 @@ func NewUserKey(username *string, keyLength int, expires *time.Time, out *string
 }
 
 //NewTokenUsingPrivateKeyFile reads a RSA private key file and signs a new JWT token with it
-func NewTokenUsingPrivateKeyFile(privateKeyPath string, username string, expires time.Duration) (*string, error) {
+func NewTokenUsingPrivateKeyFile(privateKeyPath string, hostname string, expires time.Duration) (*string, error) {
 	//logger.Info.Printf("new token, key: %s", privateKeyPath)
 
 	privateKey, err := ioutil.ReadFile(privateKeyPath)
@@ -61,16 +61,16 @@ func NewTokenUsingPrivateKeyFile(privateKeyPath string, username string, expires
 		return nil, err
 	}
 
-	return NewToken(privateKey, username, expires)
+	return NewToken(privateKey, hostname, expires)
 }
 
 //NewToken generates a new JWT token and signs using a RSA private key
-func NewToken(privateKey []byte, username string, expires time.Duration) (*string, error) {
+func NewToken(privateKey []byte, hostname string, expires time.Duration) (*string, error) {
 
 	// create token
 	token := jwt.New(jwt.SigningMethodRS256)
 	token.Claims["iss"] = "symbios"
-	token.Claims["sub"] = username
+	token.Claims["sub"] = hostname
 	//aud audience
 	token.Claims["nbf"] = time.Now()
 	token.Claims["iat"] = time.Now()

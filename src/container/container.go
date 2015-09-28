@@ -42,6 +42,8 @@ func AuthenticateAndSave(endpoint, token, keyOut, crtOut, caCertOut *string, key
 	ipList := ListToString(ipListArray, *ip)
 	domainList := ListToString(domainListArray, *domain)
 
+	logger.Info.Printf("Register Cert with: %s  ; %s", *domainList, *ipList)
+
 	certProp := CertificateProperties{
 		name:         *cn,
 		ip_list:      *ipList,

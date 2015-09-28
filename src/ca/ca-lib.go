@@ -52,7 +52,7 @@ func GetRootCertificate() ([]byte, error) {
 	return caCertificate.Export()
 }
 
-func ValidateToken(userToken string, certificate *pkix.Certificate) error {
+func ValidateToken(userToken string, certificate *pkix.Certificate, hostname *string) error {
 	cert, err := certificate.Export()
 	if err != nil {
 		return err
@@ -68,6 +68,12 @@ func ValidateToken(userToken string, certificate *pkix.Certificate) error {
 			return nil, fmt.Errorf("Replay attack!!! jti= %s", jti)
 		}
 		jtiCache[jti] = token.Claims["exp"].(float64)
+
+		//validate hostname if any
+		subject := token.Claims["sub"].(string)
+		if subject != "" && subject != *hostname {
+			return nil, fmt.Errorf("Mismatch hostname: %s", subject)
+		}
 
 		return cert, nil
 	})
@@ -89,20 +95,34 @@ func SetUserCertificate(cert *pkix.Certificate) {
 }
 
 func SignCSR(csr *pkix.CertificateSigningRequest, token string, ttl int) (*pkix.Certificate, error) {
-	if err := ValidateToken(token, userCertificate); err != nil {
+	x509Csr, err := csr.GetRawCertificateSigningRequest()
+	if err != nil {
 		return nil, err
 	}
 
-	// detect someone using the same common name
-	commonName, _ := csr.GetCommonNameCertificateSigningRequest()
-	fmt.Println(commonName)
-	for _, domain := range caDomainList {
-		if commonName == domain {
-			return nil, fmt.Errorf("ATTACK!! Someone is trying to be the CA HTTPS! The CA HTTPS certificate is unique!")
-		}
+	subject := x509Csr.Subject
+	commonName := subject.CommonName
+	ipList := x509Csr.IPAddresses
+	domainList := x509Csr.DNSNames
+	fmt.Printf("\n New CSR: subject: %s \n IP List: %s \n Domains: %s \n", subject, ipList, domainList)
+
+	if err := ValidateToken(token, userCertificate, &commonName); err != nil {
+		return nil, err
 	}
 
-	//TODO check ipList
+	ipListStr := make([]string, 10)
+	for _, v := range ipList {
+		s := v.String()
+		ipListStr = append(ipListStr, s)
+	}
+
+	if existsInArray(ipListStr, caIpList) {
+		return nil, fmt.Errorf("ALERT! Someone is trying to impersonate the CA HTTPS! Same IP: %s. ", ipList)
+	}
+
+	if existsInArray(domainList, caDomainList) {
+		return nil, fmt.Errorf("ALERT! Someone is trying to impersonate the CA HTTPS! Same domain: %s. ", domainList)
+	}
 
 	certificate, err := pkix.CreateCertificateHost(caCertificate, caInfo, caKey, csr, ttl)
 	if err != nil {
@@ -130,6 +150,8 @@ func CreateHttpsKeys(outKey, outCert *string) error {
 	country := "PT-PT"
 	ttl := 2 // years
 
+	logger.Info.Printf("HTTPS Cert with: %s  ; %s", *domainListStr, *ipListStr)
+
 	csr, err := pkix.CreateCertificateSigningRequest(keys, name, *ipListStr, *domainListStr, organization, country)
 	if err != nil {
 		return err
@@ -145,4 +167,18 @@ func CreateHttpsKeys(outKey, outCert *string) error {
 		return fmt.Errorf("Unable to save https certificate:", err)
 	}
 	return nil
+}
+
+func existsInArray(a1, a2 []string) bool {
+	m := make(map[string]bool)
+	for _, v := range a1 {
+		m[v] = true
+	}
+
+	for _, v := range a2 {
+		if _, exists := m[v]; exists {
+			return true
+		}
+	}
+	return false
 }

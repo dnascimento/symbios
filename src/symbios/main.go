@@ -47,7 +47,7 @@ func clientCmd() {
 
 	// new-token
 	var newTokenCmd = flag.NewFlagSet("new-token", flag.ExitOnError)
-	var newTokenUsername = newTokenCmd.String("username", "user", "Username")
+	var newTokenHostname = newTokenCmd.String("hostname", "", "Username")
 	var privateKeyPath = newTokenCmd.String("key", "id_rsa", "Private key file")
 
 	// ca-hash
@@ -69,7 +69,7 @@ func clientCmd() {
 
 	case "new-token":
 		newTokenCmd.Parse(os.Args[2:])
-		token, err := client.NewTokenUsingPrivateKeyFile(*privateKeyPath, *newTokenUsername, defaultTokenDuration)
+		token, err := client.NewTokenUsingPrivateKeyFile(*privateKeyPath, *newTokenHostname, defaultTokenDuration)
 		if err != nil {
 			logger.Error.Printf("Failed to create token: %s", err)
 			os.Exit(2)
@@ -128,9 +128,9 @@ func containerCmd() {
 	var caCertOut = containerCmd.String("ca-cert-out", "/etc/secret/ca-cert.pem", "The location where the ca certificate will be written.")
 	var keysize = containerCmd.Int("size", 2048, "The size of the private key e.g. 1024, 2048 (default), 4096 .")
 
-	var cn = containerCmd.String("cn", "Tommy", "Default common name.")
-	var ip_list = containerCmd.String("ip_list", "192.168.1.1", "IP List.")
-	var domain_list = containerCmd.String("domain_list", "symbios", "Domain List.")
+	var cn = containerCmd.String("cn", "", "Default common name.")
+	var ip_list = containerCmd.String("ip_list", "", "IP List.")
+	var domain_list = containerCmd.String("domain_list", "", "Domain List.")
 	var organization = containerCmd.String("organization", "symbios", "Organization.")
 	var country = containerCmd.String("country", "US", "Country.")
 
@@ -139,7 +139,7 @@ func containerCmd() {
 	endpoint := "https://" + (*caHost) + ":" + (*caPort)
 
 	if *caHashEncoded == "" || *token == "" {
-		logger.Error.Printf("-ca-hash -token are required fields")
+		fmt.Printf("-ca-hash -token are required flags, obtained using symbios ca-hash  ; symbios new-user")
 		os.Exit(2)
 	}
 	caHash, err := b64.StdEncoding.DecodeString(*caHashEncoded)
