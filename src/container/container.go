@@ -1,13 +1,17 @@
 package container
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/dnascimento/symbios/src/logger"
 	"github.com/dnascimento/symbios/src/pkix"
@@ -23,20 +27,30 @@ type CertificateProperties struct {
 }
 
 //AuthenticateAndSave generates a key, creates a CSR, sends to CA and stores the generated private key and certificate
-func AuthenticateAndSave(endpoint, token, keyOut, crtOut, caCertOut *string, keysize int, cn, ipList, domain_list, organization, country *string, caCertificateHash *[]byte) error {
+func AuthenticateAndSave(endpoint, token, keyOut, crtOut, caCertOut *string, keysize int, cn, ip, domain, organization, country *string, caCertificateHash *[]byte) error {
 	key, err := pkix.CreateRSAKey(keysize)
 	if err != nil {
 		logger.Error.Printf("Unable to generate keys.", err)
 		return err
 	}
 
+	ipListArray, domainListArray, err := GetHostnameAndIp()
+	if err != nil {
+		return fmt.Errorf("Unable to obtain hostname and ip:", err)
+	}
+
+	ipList := ListToString(ipListArray, *ip)
+	domainList := ListToString(domainListArray, *domain)
+
 	certProp := CertificateProperties{
 		name:         *cn,
 		ip_list:      *ipList,
-		domain_list:  *domain_list,
+		domain_list:  *domainList,
 		organization: *organization,
 		country:      *country,
 	}
+
+	logger.Info.Println(certProp)
 
 	cert, err := Authenticate(endpoint, token, key, &certProp, caCertificateHash)
 	if err != nil {
@@ -64,7 +78,7 @@ func AuthenticateAndSave(endpoint, token, keyOut, crtOut, caCertOut *string, key
 }
 
 func Authenticate(endpoint *string, token *string, containerKey *pkix.Key, certProp *CertificateProperties, caCertificateHash *[]byte) (*pkix.Certificate, error) {
-	logger.Info.Printf("Authenticating token %s on CA %s", *token, *endpoint)
+	logger.Info.Printf("Authenticating token on CA %s", *endpoint)
 
 	caCertificate, err := GetCACertificate(endpoint)
 	if err != nil {
@@ -87,7 +101,6 @@ func Authenticate(endpoint *string, token *string, containerKey *pkix.Key, certP
 	// Generate a CSR
 	csr, err := pkix.CreateCertificateSigningRequest(containerKey, certProp.name, certProp.ip_list,
 		certProp.domain_list, certProp.organization, certProp.country)
-
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +111,7 @@ func Authenticate(endpoint *string, token *string, containerKey *pkix.Key, certP
 		return nil, err
 	}
 
-	// set HTTPS client
+	// TLS client is MANDATORY to avoid attacks
 	var client *http.Client
 	tr := &http.Transport{
 		TLSClientConfig:    &tls.Config{RootCAs: pool},
@@ -183,8 +196,15 @@ func ExportCACert(endpoint *string, out *string) error {
 }
 
 func GetCACertificate(endpoint *string) (*pkix.Certificate, error) {
-	logger.Info.Printf("Get CA Certificate")
-	res, err := http.Get(fmt.Sprintf("%s/v1/cert", *endpoint))
+	//logger.Info.Printf("Get CA Certificate")
+	// ignore TLS. We will check the certificate fingerprint
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+
+	res, err := client.Get(fmt.Sprintf("%s/v1/cert", *endpoint))
 	if err != nil {
 		return nil, fmt.Errorf("A problem occurred during communication with the Symbios CA.", err)
 	}
@@ -199,4 +219,68 @@ func GetCACertificate(endpoint *string) (*pkix.Certificate, error) {
 		return nil, fmt.Errorf("A problem occurred while converting the CA certificate from the Symbios CA. ", err)
 	}
 	return cert, err
+}
+
+func GetHostnameAndIp() ([]string, []string, error) {
+	var ipList []string
+	var domainList []string
+
+	hostsFile := "/etc/hosts"
+	if _, err := os.Stat(hostsFile); os.IsNotExist(err) {
+		// if null, return empty, no problem (windows?!)
+		return ipList, domainList, nil
+	}
+
+	file, err := os.Open(hostsFile)
+	if err != nil {
+		return ipList, domainList, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	containerIp := ""
+
+	// parse first line: containerIp,  containerId
+	for scanner.Scan() {
+		lineText := scanner.Text()
+		if strings.HasPrefix(lineText, "#") == true {
+			continue
+		}
+		f := func(c rune) bool {
+			return unicode.IsSpace(c)
+		}
+
+		line := strings.FieldsFunc(lineText, f)
+		ip := line[0]
+		name := line[1]
+		if containerIp == "" {
+			containerIp = ip
+			ipList = append(ipList, containerIp)
+		}
+		if containerIp == ip {
+			domainList = append(domainList, name)
+		}
+	}
+	return ipList, domainList, nil
+}
+
+func ListToString(array []string, s string) *string {
+	result := ""
+
+	for _, val := range array {
+		result += val
+		result += ","
+	}
+	if len(s) > 0 {
+		result += s
+		result += ","
+	}
+
+	res := ""
+	if len(result) > 0 {
+		res = result[:len(result)-1]
+	}
+	return &res
+
 }

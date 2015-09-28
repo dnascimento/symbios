@@ -33,7 +33,14 @@ func HttpServer(port int, userKey string, keylength int, organization string, co
 	_, _, _, err = NewRootCertificate(keylength, expires, organization, country)
 	if err != nil {
 		logger.Error.Printf("failed to create root certificate:", err)
-		return err
+		os.Exit(2)
+	}
+
+	outKey := "http_key.pem"
+	outCert := "http_cert.pem"
+	if err = CreateHttpsKeys(&outKey, &outCert); err != nil {
+		logger.Error.Printf("failed to create https certificate:", err)
+		os.Exit(2)
 	}
 
 	SetUserCertificate(certificate)
@@ -43,9 +50,11 @@ func HttpServer(port int, userKey string, keylength int, organization string, co
 	http.HandleFunc("/v1/cert", HandleCertRequest)
 	http.HandleFunc("/v1/csr", HandleCSR)
 	logger.Info.Printf("Symbios Certificate Authority listening in port: %s", port)
-	err = http.ListenAndServe(":"+strconv.Itoa(port), nil)
+
+	err = http.ListenAndServeTLS(":"+strconv.Itoa(port), outCert, outKey, nil)
 	if err != nil {
 		logger.Error.Println(err)
+		os.Exit(2)
 	}
 	return nil
 }

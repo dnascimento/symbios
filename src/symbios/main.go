@@ -26,16 +26,12 @@ func main() {
 	}
 
 	switch os.Args[1] {
-	case "client":
-		clientCmd()
 	case "ca":
 		caCmd()
 	case "container":
 		containerCmd()
 	default:
-		error := fmt.Sprintf("%q is not valid command.\n", os.Args[1])
-		argError(error)
-		os.Exit(2)
+		clientCmd()
 	}
 }
 
@@ -60,9 +56,10 @@ func clientCmd() {
 	var caPort = caHashCmd.String("port", "33004", "Certificate Authority port")
 
 	// select subcommand
-	switch os.Args[2] {
+	//switch os.Args[2] {
+	switch os.Args[1] {
 	case "new-user":
-		newUserCmd.Parse(os.Args[3:])
+		newUserCmd.Parse(os.Args[2:])
 		encodedCert, _, _, err := client.NewUserKey(username, *keyLength, &expires, out)
 		if err != nil {
 			logger.Error.Printf("Failed to create new user key: %s", err)
@@ -71,7 +68,7 @@ func clientCmd() {
 		fmt.Println(*encodedCert)
 
 	case "new-token":
-		newTokenCmd.Parse(os.Args[3:])
+		newTokenCmd.Parse(os.Args[2:])
 		token, err := client.NewTokenUsingPrivateKeyFile(*privateKeyPath, *newTokenUsername, defaultTokenDuration)
 		if err != nil {
 			logger.Error.Printf("Failed to create token: %s", err)
@@ -80,8 +77,8 @@ func clientCmd() {
 		fmt.Println(*token)
 
 	case "ca-hash":
-		caHashCmd.Parse(os.Args[3:])
-		endpoint := "http://" + (*caHost) + ":" + (*caPort)
+		caHashCmd.Parse(os.Args[2:])
+		endpoint := "https://" + (*caHost) + ":" + (*caPort)
 		hash, err := client.GetCACertHashEncoded(&endpoint)
 		if err != nil {
 			logger.Error.Printf("Failed to get CA Hash: %s", err)
@@ -139,7 +136,7 @@ func containerCmd() {
 
 	containerCmd.Parse(os.Args[2:])
 
-	endpoint := "http://" + (*caHost) + ":" + (*caPort)
+	endpoint := "https://" + (*caHost) + ":" + (*caPort)
 
 	if *caHashEncoded == "" || *token == "" {
 		logger.Error.Printf("-ca-hash -token are required fields")
@@ -162,22 +159,14 @@ func argError(error string) {
 		fmt.Println("ERROR: " + error)
 		fmt.Println(" ")
 	}
-
 	fmt.Println("usage: symbios <client/ca/container> <command> [<args>]")
-	fmt.Println("Symbios runs at:")
-	fmt.Println("   * client - where you run your docker client")
-	fmt.Println("   * ca - in the certificate authority container")
-	fmt.Println("   * container - in all other containers")
+	fmt.Println("symbios new-user  - generate new user key")
 	fmt.Println(" ")
-	fmt.Println("symbios client new-user")
+	fmt.Println("symbios ca-hash - get certificate authority root-certificate fingerprint")
 	fmt.Println(" ")
-	fmt.Println("symbios client new-token")
+	fmt.Println("symbios new-token - generate new token to launch new container")
 	fmt.Println(" ")
-	fmt.Println("symbios client ca-hash")
+	fmt.Println("symbios ca - setup certificate authority")
 	fmt.Println(" ")
-	fmt.Println(" ")
-	fmt.Println("symbios ca")
-	fmt.Println(" ")
-	fmt.Println(" ")
-	fmt.Println("symbios container")
+	fmt.Println("symbios container - authenticate a new container")
 }

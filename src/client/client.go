@@ -5,6 +5,7 @@
 package client
 
 import (
+	"crypto/tls"
 	b64 "encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -82,7 +83,12 @@ func NewToken(privateKey []byte, username string, expires time.Duration) (*strin
 
 func GetCACertHash(endpoint *string) (*[]byte, error) {
 	//logger.Info.Printf("get ca certificate at: %s", *endpoint)
-	res, err := http.Get(fmt.Sprintf("%s/v1/hash", *endpoint))
+	// ignore TLS because we don't know the destination yet
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	res, err := client.Get(fmt.Sprintf("%s/v1/hash", *endpoint))
 	if err != nil {
 		log.Fatal("A problem occurred during communication with the Symbios CA.", err)
 		return nil, err

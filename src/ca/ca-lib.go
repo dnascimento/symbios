@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/dnascimento/symbios/src/container"
 	"github.com/dnascimento/symbios/src/logger"
 	"github.com/dnascimento/symbios/src/pkix"
 )
@@ -18,6 +19,8 @@ var caKey *pkix.Key
 var caCertificate *pkix.Certificate
 var caInfo *pkix.CertificateAuthorityInfo
 var jtiCache map[string]float64
+var caIpList []string
+var caDomainList []string
 
 func init() {
 	jtiCache = make(map[string]float64)
@@ -90,9 +93,56 @@ func SignCSR(csr *pkix.CertificateSigningRequest, token string, ttl int) (*pkix.
 		return nil, err
 	}
 
+	// detect someone using the same common name
+	commonName, _ := csr.GetCommonNameCertificateSigningRequest()
+	fmt.Println(commonName)
+	for _, domain := range caDomainList {
+		if commonName == domain {
+			return nil, fmt.Errorf("ATTACK!! Someone is trying to be the CA HTTPS! The CA HTTPS certificate is unique!")
+		}
+	}
+
+	//TODO check ipList
+
 	certificate, err := pkix.CreateCertificateHost(caCertificate, caInfo, caKey, csr, ttl)
 	if err != nil {
 		return nil, err
 	}
 	return certificate, nil
+}
+
+func CreateHttpsKeys(outKey, outCert *string) error {
+	logger.Info.Println("Creating https key")
+
+	keyLength := 4096
+	// create keys
+	keys, err := pkix.CreateRSAKey(keyLength)
+	if err != nil {
+		return err
+	}
+
+	caIpList, caDomainList, err = container.GetHostnameAndIp()
+	// create csr
+	name := "ca"
+	ipListStr := container.ListToString(caIpList, "")
+	domainListStr := container.ListToString(caDomainList, "")
+	organization := "symbios"
+	country := "PT-PT"
+	ttl := 2 // years
+
+	csr, err := pkix.CreateCertificateSigningRequest(keys, name, *ipListStr, *domainListStr, organization, country)
+	if err != nil {
+		return err
+	}
+
+	certificate, err := pkix.CreateCertificateHost(caCertificate, caInfo, caKey, csr, ttl)
+
+	if err := keys.SavePrivate(outKey); err != nil {
+		return fmt.Errorf("Unable to save https key:", err)
+	}
+
+	if err := certificate.Save(outCert); err != nil {
+		return fmt.Errorf("Unable to save https certificate:", err)
+	}
+	return nil
 }

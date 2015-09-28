@@ -5,27 +5,28 @@ Symbios accomplishes this without distribution or centralized management of secr
 
 Symbios is result from a fork of [Pollendina](https://github.com/allingeek/pollendina), #2 at DockerCon Hackathon 2015
 
+Symbios comes from the symbiose relation between containers exchanging data with SSL/TLS.
 
 ## Usage
 ### Setup (Create a CA container)
 Install symbios in your localhost: 
 ```
 go get github.com/dnascimento/symbios
-go install github.com/dnascimento/symbios
+go install github.com/dnascimento/symbios/src/symbios
 ```
 
 Create user keys: 
 
-`symbios client new-user`
+`symbios new-user`
 
-Launch CA container injecting the obtained key and expose the port:
+Launch CA container injecting the obtained key as environment variable:
 
-`docker run -i -t --name ca -e "SYM_USER_KEY=XXXXXXXXXXX"`
+`docker run -i -t --name ca -e "SYM_USER_KEY=XXXXXXXXXXX" symbios/ca`
 
-Get CA hash key
+Get CA hash key 
 ```
-docker run -i -t --link ca:ca
-symbios client ca-hash --host ca
+docker run -i -t --link ca:ca symbios/base
+symbios ca-hash --host ca
 ```
 
 You can close the latest container. Save this hash in your file system. It authenticates the certificate authority that you lunched.
@@ -33,10 +34,13 @@ You can close the latest container. Save this hash in your file system. It authe
 ### Add new container
 Generate token
 ```
-symbios client new-token -key id_rsa 
+symbios new-token -key id_rsa 
 ```
 
 Launch new container
 ```
 docker run -i -t -link ca:ca -e "SYM_TOKEN=XXXXXXXX" -e "SYM_CA_HASH=XXXXXXXX" -e "SYM_CA_HOST=ca"
 ```
+
+
+### Contributors
