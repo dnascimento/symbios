@@ -8,7 +8,7 @@ Symbios is result from a fork of [Pollendina](https://github.com/allingeek/polle
 Symbios comes from the symbiose relation between containers exchanging data with SSL/TLS.
 
 ### Protocol
-[Protocol details](https://github.com/dnascimento/symbios/blob/master/doc/protocol.md)
+[Protocol details](https://github.com/dnascimento/symbios/blob/master/doc/README.md)
 
 ## Usage
 ### Setup (Create a CA container)

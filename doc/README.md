@@ -11,7 +11,7 @@ Symbios accomplishes this without distribution or centralized management of secr
 3. The CA container generates its root-certificate
 4. User obtains the hash of CA root-certificate.
 
-![Setup](https://raw.github.com/dnascimento/symbios/master/docs/setup.png)
+![Setup](https://raw.githubusercontent.com/dnascimento/symbios/master/doc/setup.png)
 
 ### Usage
 1. User obtains a new JWT token by generating a random nonce and signing it with its private key. (symbios-client new-token id.rsa)
@@ -24,7 +24,7 @@ Symbios accomplishes this without distribution or centralized management of secr
 10. The container validates the retrieved certificate
 11. The certificate is stored.
 
-![Setup](https://raw.github.com/dnascimento/symbios/master/docs/authentication.png)
+![Authentication](https://github.com/dnascimento/symbios/blob/master/doc/authentication.png)
 ### Man in the middle
 * The root-certificate is downloaded without TLS validation because the container knows its fingerprint.
 * The CSR is sent using server TLS authentication. The Certificate Authority generates and signs a certificate to use as HTTPS server. The root-certificate is used only for signing.
