@@ -49,6 +49,8 @@ docker run -i -t -link ca:ca -e "SYM_TOKEN=<token obtained previously>" -e "SYM_
 ## Contributors
 - [Dário Nascimento](https://github.com/dnascimento)
 
+Waiting for you!
+
 ## Kudos
 - [CoreOS Pkix Project](https://github.com/coreos/etcd-ca/tree/master/pkix)
 - Diogo Mónica
