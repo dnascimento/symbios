@@ -23,7 +23,9 @@ Create user keys:
 `symbios new-user`
 
 Launch CA container injecting the obtained key as environment variable:
-`docker run -i -t --name ca -e "SYM_USER_KEY=<key obtained previously>" symbios/ca`
+```
+docker run -i -t --name ca -e "SYM_USER_KEY=<key obtained previously>" symbios/ca bash
+```
 
 Get Certificate Authority root-certificate fingerprint
 ```
@@ -40,7 +42,7 @@ symbios new-token -key id_rsa
 
 Launch new container injecting the token
 ```
-docker run -i -t -link ca:ca -e "SYM_TOKEN=<token obtained previously>" -e "SYM_CA_HASH=<fingerprint file content>" -e "SYM_CA_HOST=ca"
+docker run -i -t -link ca:ca -e "SYM_TOKEN=<token obtained previously>" -e "SYM_CA_HASH=<fingerprint file content>" -e "SYM_CA_HOST=ca" symbios/container bash
 ```
 
 
