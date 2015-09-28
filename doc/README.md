@@ -25,6 +25,8 @@ Symbios accomplishes this without distribution or centralized management of secr
 11. The certificate is stored.
 
 ![Authentication](https://github.com/dnascimento/symbios/blob/master/doc/authentication.png)
-### Man in the middle
+### Man in the middle Attack
 * The root-certificate is downloaded without TLS validation because the container knows its fingerprint.
 * The CSR is sent using server TLS authentication. The Certificate Authority generates and signs a certificate to use as HTTPS server. The root-certificate is used only for signing.
+* While an attacker could stole the token to sign his key, the CSR and token are ciphered using the CA HTTPS cert.
+* An alternative would involve to generate key and then generate the token with its fingerprint requiring the client to generate container's key or to send the fingerprint from the container to client or to inject the user key in every container.
