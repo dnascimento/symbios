@@ -29,7 +29,7 @@ func init() {
 func NewRootCertificate(keylength int, expires time.Time, organization, country string) (*pkix.Key, *pkix.Certificate, *pkix.CertificateAuthorityInfo, error) {
 	cKey, err := pkix.CreateRSAKey(keylength)
 	if err != nil {
-		logger.Error.Printf("Failed to create root key pair:", err)
+		logger.Error.Printf("Failed to create root key pair: %s", err)
 		return nil, nil, nil, err
 	}
 
@@ -37,7 +37,7 @@ func NewRootCertificate(keylength int, expires time.Time, organization, country 
 
 	caCertificate, caInfo, err = pkix.CreateCertificateAuthority(caKey, expires, organization, country)
 	if err != nil {
-		logger.Error.Printf("Failed to create certificate authority:", err)
+		logger.Error.Printf("Failed to create certificate authority: %s", err)
 		return nil, nil, nil, err
 	}
 
@@ -160,11 +160,11 @@ func CreateHttpsKeys(outKey, outCert *string) error {
 	certificate, err := pkix.CreateCertificateHost(caCertificate, caInfo, caKey, csr, ttl)
 
 	if err := keys.SavePrivate(outKey); err != nil {
-		return fmt.Errorf("Unable to save https key:", err)
+		return fmt.Errorf("Unable to save https key: %s", err)
 	}
 
 	if err := certificate.Save(outCert); err != nil {
-		return fmt.Errorf("Unable to save https certificate:", err)
+		return fmt.Errorf("Unable to save https certificate: %s", err)
 	}
 	return nil
 }

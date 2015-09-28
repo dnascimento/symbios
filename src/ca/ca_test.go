@@ -32,7 +32,7 @@ func TestCa(t *testing.T) {
 	}
 
 	if err := rootCert.VerifyFingerprint(&fingerprint); err != nil {
-		t.Fatalf("Fingerprint!", err)
+		t.Fatalf("Fingerprint! %s", err)
 	}
 
 	// CSR signature is tested in container_test.go

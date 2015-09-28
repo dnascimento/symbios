@@ -26,20 +26,20 @@ func HttpServer(port int, userKey string, keylength int, organization string, co
 	// read user pubKey
 	certificate, err := readUserCertificate(userKey)
 	if err != nil {
-		logger.Error.Printf("failed to read user certificate:", err)
+		logger.Error.Printf("failed to read user certificate: %s", err)
 		os.Exit(2)
 	}
 
 	_, _, _, err = NewRootCertificate(keylength, expires, organization, country)
 	if err != nil {
-		logger.Error.Printf("failed to create root certificate:", err)
+		logger.Error.Printf("failed to create root certificate: %s", err)
 		os.Exit(2)
 	}
 
 	outKey := "http_key.pem"
 	outCert := "http_cert.pem"
 	if err = CreateHttpsKeys(&outKey, &outCert); err != nil {
-		logger.Error.Printf("failed to create https certificate:", err)
+		logger.Error.Printf("failed to create https certificate: %s", err)
 		os.Exit(2)
 	}
 
@@ -49,7 +49,7 @@ func HttpServer(port int, userKey string, keylength int, organization string, co
 	http.HandleFunc("/v1/hash", HandleCertFingerprintRequest)
 	http.HandleFunc("/v1/cert", HandleCertRequest)
 	http.HandleFunc("/v1/csr", HandleCSR)
-	logger.Info.Printf("Symbios Certificate Authority listening in port: %s", port)
+	logger.Info.Printf("Symbios Certificate Authority listening in port: %d", port)
 
 	err = http.ListenAndServeTLS(":"+strconv.Itoa(port), outCert, outKey, nil)
 	if err != nil {
@@ -142,14 +142,14 @@ func readUserCertificate(encodedUserKey string) (*pkix.Certificate, error) {
 	}
 	userCertificateBytes, err := b64.StdEncoding.DecodeString(encodedUserKey)
 	if err != nil {
-		logger.Error.Printf("failed to decode certificate:", err)
+		logger.Error.Printf("failed to decode certificate: %s", err)
 		return nil, err
 	}
 
 	// convert to KeyPair
 	cert, err := pkix.NewCertificateFromPEM(userCertificateBytes)
 	if err != nil {
-		logger.Error.Printf("failed to create certificate:", err)
+		logger.Error.Printf("failed to create certificate: %s", err)
 		return nil, err
 	}
 	return cert, nil

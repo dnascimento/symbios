@@ -123,9 +123,9 @@ func containerCmd() {
 	var token = containerCmd.String("token", "", "User's provisioning token.")
 	var caHashEncoded = containerCmd.String("ca-hash", "", "User's provisioning token.")
 
-	var keyOut = containerCmd.String("keyout", "/etc/secret/key", "The location where the client private and public key will be written.")
-	var crtOut = containerCmd.String("certout", "/etc/secret/client-cert.pem", "The location where the client certificate will be written.")
-	var caCertOut = containerCmd.String("ca-cert-out", "/etc/secret/ca-cert.pem", "The location where the ca certificate will be written.")
+	var keyOut = containerCmd.String("keyout", "/etc/secret/id.pem", "The location where the client private and public key will be written.")
+	var crtOut = containerCmd.String("certout", "/etc/secret/id_cert.pem", "The location where the client certificate will be written.")
+	var caCertOut = containerCmd.String("ca-cert-out", "/etc/secret/ca_cert.pem", "The location where the ca certificate will be written.")
 	var keysize = containerCmd.Int("size", 2048, "The size of the private key e.g. 1024, 2048 (default), 4096 .")
 
 	var cn = containerCmd.String("cn", "", "Default common name.")

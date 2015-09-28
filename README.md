@@ -7,6 +7,9 @@ Symbios is result from a fork of [Pollendina](https://github.com/allingeek/polle
 
 Symbios comes from the symbiose relation between containers exchanging data with SSL/TLS.
 
+### Protocol
+[Protocol details](https://github.com/dnascimento/symbios/blob/master/PROTOCOL.md)
+
 ## Usage
 ### Setup (Create a CA container)
 Install symbios in your localhost: 
@@ -20,16 +23,14 @@ Create user keys:
 `symbios new-user`
 
 Launch CA container injecting the obtained key as environment variable:
+`docker run -i -t --name ca -e "SYM_USER_KEY=<key obtained previously>" symbios/ca`
 
-`docker run -i -t --name ca -e "SYM_USER_KEY=XXXXXXXXXXX" symbios/ca`
-
-Get CA hash key 
+Get Certificate Authority root-certificate fingerprint
 ```
-docker run -i -t --link ca:ca symbios/base
-symbios ca-hash --host ca
+docker run -i -t --link ca:ca symbios/base symbios ca-hash --host ca > fingerprint
 ```
 
-You can close the latest container. Save this hash in your file system. It authenticates the certificate authority that you lunched.
+Keep the fingerprint file. It authenticates the certificate authority that you lunched.
 
 ### Add new container
 Generate token
@@ -37,10 +38,24 @@ Generate token
 symbios new-token -key id_rsa 
 ```
 
-Launch new container
+Launch new container injecting the token
 ```
-docker run -i -t -link ca:ca -e "SYM_TOKEN=XXXXXXXX" -e "SYM_CA_HASH=XXXXXXXX" -e "SYM_CA_HOST=ca"
+docker run -i -t -link ca:ca -e "SYM_TOKEN=<token obtained previously>" -e "SYM_CA_HASH=<fingerprint file content>" -e "SYM_CA_HOST=ca"
 ```
 
 
-### Contributors
+## Contributors
+- [Dário Nascimento](https://github.com/dnascimento)
+
+## Kudos
+- [CoreOS Pkix Project](https://github.com/coreos/etcd-ca/tree/master/pkix)
+- Diogo Mónica
+- Jeff Nickoloff - original idea
+
+## Hackathon Pollendina Contributors 
+
+- [Jeff Nickoloff](https://github.com/allingeek)
+- [Dário Nascimento](https://github.com/dnascimento)
+- [Jason Huddleston](https://github.com/huddlesj) [Docker newbie]
+- [Madhuri Yechuri](https://github.com/myechuri)
+- [Henry Kendall](https://github.com/hskendall) [Docker newbie]
