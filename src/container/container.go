@@ -1,20 +1,19 @@
+// Package container  - Symbios user-side client
+// Author: Dario Nascimento
 package container
 
 import (
-	"bufio"
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"strings"
 	"time"
-	"unicode"
 
 	"github.com/dnascimento/symbios/src/logger"
 	"github.com/dnascimento/symbios/src/pkix"
+	"github.com/dnascimento/symbios/src/util"
 )
 
 //CertificateProperties TODO
@@ -30,17 +29,17 @@ type CertificateProperties struct {
 func AuthenticateAndSave(endpoint, token, keyOut, crtOut, caCertOut *string, keysize int, cn, ip, domain, organization, country *string, caCertificateHash *[]byte) error {
 	key, err := pkix.CreateRSAKey(keysize)
 	if err != nil {
-		logger.Error.Printf("Unable to generate keys.", err)
+		logger.Error.Printf("Unable to generate keys. %s", err)
 		return err
 	}
 
-	ipListArray, domainListArray, err := GetHostnameAndIp()
+	ipListArray, domainListArray, err := util.GetHostnameAndIp()
 	if err != nil {
-		return fmt.Errorf("Unable to obtain hostname and ip:", err)
+		return fmt.Errorf("Unable to obtain hostname and ip: %s", err)
 	}
 
-	ipList := ListToString(ipListArray, *ip)
-	domainList := ListToString(domainListArray, *domain)
+	ipList := util.ListToString(ipListArray, *ip)
+	domainList := util.ListToString(domainListArray, *domain)
 
 	logger.Info.Printf("Register Cert with: %s  ; %s", *domainList, *ipList)
 
@@ -56,24 +55,24 @@ func AuthenticateAndSave(endpoint, token, keyOut, crtOut, caCertOut *string, key
 
 	cert, err := Authenticate(endpoint, token, key, &certProp, caCertificateHash)
 	if err != nil {
-		return fmt.Errorf("Unable to authenticate.", err)
+		return fmt.Errorf("Unable to authenticate. %s", err)
 	}
 
 	if err := key.SavePrivate(keyOut); err != nil {
-		return fmt.Errorf("Unable to save key:", err)
+		return fmt.Errorf("Unable to save key: %s", err)
 	}
 
 	if err := cert.Save(crtOut); err != nil {
-		return fmt.Errorf("Unable to save certificate:", err)
+		return fmt.Errorf("Unable to save certificate: %s", err)
 	}
 
 	caCert, err := GetCACertificate(endpoint)
 	if err != nil {
-		return fmt.Errorf("Unable to get CA Certificate.", err)
+		return fmt.Errorf("Unable to get CA Certificate. %s", err)
 	}
 
 	if err := caCert.Save(caCertOut); err != nil {
-		return fmt.Errorf("Unable to save CA certificate:", err)
+		return fmt.Errorf("Unable to save CA certificate: %s", err)
 	}
 
 	return nil
@@ -146,14 +145,14 @@ func sendCSR(client *http.Client, csr []byte, token *string, endpoint *string) (
 	// Execute a POST request to upload the provided CSR
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/csr", *endpoint), bytes.NewReader(csr))
 	if err != nil {
-		return nil, fmt.Errorf("Unable to form the HTTPS request.", err)
+		return nil, fmt.Errorf("Unable to form the HTTPS request. %s", err)
 	}
 	req.Header.Set("X-Auth-Token", *token)
 	signTimeStart := time.Now()
 	res, err := client.Do(req)
 	logger.Info.Printf("[TIMER] [%s] Uploaded CSR and retrieved CRT.", time.Since(signTimeStart))
 	if err != nil {
-		return nil, fmt.Errorf("A problem occurred during communication with the Symbios CA.", err)
+		return nil, fmt.Errorf("A problem occurred during communication with the Symbios CA. %s", err)
 	}
 
 	// read the response body and get it into certificate form
@@ -167,12 +166,12 @@ func sendCSR(client *http.Client, csr []byte, token *string, endpoint *string) (
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("A problem occurred while reading the certificate from the Symbios CA. ", err)
+		return nil, fmt.Errorf("A problem occurred while reading the certificate from the Symbios CA.  %s", err)
 	}
 
 	cert, err := pkix.NewCertificateFromPEM(data)
 	if err != nil {
-		return nil, fmt.Errorf("A problem occurred while parsing the certificate from the Symbios CA. ", err)
+		return nil, fmt.Errorf("A problem occurred while parsing the certificate from the Symbios CA. %s", err)
 	}
 
 	return cert, nil
@@ -190,7 +189,7 @@ func ExportCACert(endpoint *string, out *string) error {
 	}
 
 	if err := cert.Save(out); err != nil {
-		return fmt.Errorf("Unable to save CA certificate:", err)
+		return fmt.Errorf("Unable to save CA certificate: %s", err)
 	}
 
 	return nil
@@ -208,81 +207,17 @@ func GetCACertificate(endpoint *string) (*pkix.Certificate, error) {
 
 	res, err := client.Get(fmt.Sprintf("%s/v1/cert", *endpoint))
 	if err != nil {
-		return nil, fmt.Errorf("A problem occurred during communication with the Symbios CA.", err)
+		return nil, fmt.Errorf("A problem occurred during communication with the Symbios CA. %s", err)
 	}
 	// read the response body and get it into certificate form
 	defer res.Body.Close()
 	data, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil, fmt.Errorf("A problem occurred while reading the CA certificate from the Symbios CA. ", err)
+		return nil, fmt.Errorf("A problem occurred while reading the CA certificate from the Symbios CA. %s", err)
 	}
 	cert, err := pkix.NewCertificateFromPEM(data)
 	if err != nil {
-		return nil, fmt.Errorf("A problem occurred while converting the CA certificate from the Symbios CA. ", err)
+		return nil, fmt.Errorf("A problem occurred while converting the CA certificate from the Symbios CA. %s", err)
 	}
 	return cert, err
-}
-
-func GetHostnameAndIp() ([]string, []string, error) {
-	var ipList []string
-	var domainList []string
-
-	hostsFile := "/etc/hosts"
-	if _, err := os.Stat(hostsFile); os.IsNotExist(err) {
-		// if null, return empty, no problem (windows?!)
-		return ipList, domainList, nil
-	}
-
-	file, err := os.Open(hostsFile)
-	if err != nil {
-		return ipList, domainList, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	containerIp := ""
-
-	// parse first line: containerIp,  containerId
-	for scanner.Scan() {
-		lineText := scanner.Text()
-		if strings.HasPrefix(lineText, "#") == true {
-			continue
-		}
-		f := func(c rune) bool {
-			return unicode.IsSpace(c)
-		}
-
-		line := strings.FieldsFunc(lineText, f)
-		ip := line[0]
-		name := line[1]
-		if containerIp == "" {
-			containerIp = ip
-			ipList = append(ipList, containerIp)
-		}
-		if containerIp == ip {
-			domainList = append(domainList, name)
-		}
-	}
-	return ipList, domainList, nil
-}
-
-func ListToString(array []string, s string) *string {
-	result := ""
-
-	for _, val := range array {
-		result += val
-		result += ","
-	}
-	if len(s) > 0 && s != "-" {
-		result += s
-		result += ","
-	}
-
-	res := ""
-	if len(result) > 0 {
-		res = result[:len(result)-1]
-	}
-	return &res
-
 }

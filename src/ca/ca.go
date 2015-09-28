@@ -1,27 +1,23 @@
-/*
-*  Symbios Certificate Authority
-*  Author: Dario Nascimento
- */
+// Package ca : Symbios Certificate Authority
+// Author: Dario Nascimento
 package ca
 
 import (
 	b64 "encoding/base64"
-	"strconv"
-)
-
-import (
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/dnascimento/symbios/src/logger"
 	"github.com/dnascimento/symbios/src/pkix"
 )
 
-func HttpServer(port int, userKey string, keylength int, organization string, country string, expires time.Time) error {
+//HTTPServer is the main CA method: read the user key, create a root certificate and start the CA HTTTS server
+func HTTPServer(port int, userKey string, keylength int, organization string, country string, expires time.Time) error {
 
 	// read user pubKey
 	certificate, err := readUserCertificate(userKey)
@@ -38,7 +34,7 @@ func HttpServer(port int, userKey string, keylength int, organization string, co
 
 	outKey := "http_key.pem"
 	outCert := "http_cert.pem"
-	if err = CreateHttpsKeys(&outKey, &outCert); err != nil {
+	if err = CreateHTTPSKeys(&outKey, &outCert); err != nil {
 		logger.Error.Printf("failed to create https certificate: %s", err)
 		os.Exit(2)
 	}
@@ -59,6 +55,7 @@ func HttpServer(port int, userKey string, keylength int, organization string, co
 	return nil
 }
 
+//HandleCertFingerprintRequest handles a request to get the root-certificate fingerprint
 func HandleCertFingerprintRequest(w http.ResponseWriter, req *http.Request) {
 	//logger.Info.Printf("Cert Hash")
 	fingerprint, err := GetCertificateFingerprint()
@@ -71,6 +68,7 @@ func HandleCertFingerprintRequest(w http.ResponseWriter, req *http.Request) {
 	w.Write(fingerprint)
 }
 
+//HandleCertRequest handles a request to get the root-certificate
 func HandleCertRequest(w http.ResponseWriter, req *http.Request) {
 	logger.Info.Printf("Request CA certificate")
 	cert, err := GetRootCertificate()
@@ -83,6 +81,7 @@ func HandleCertRequest(w http.ResponseWriter, req *http.Request) {
 	return
 }
 
+//HandleCSR handles a request to sign the CSR creating a certificate
 func HandleCSR(w http.ResponseWriter, req *http.Request) {
 	// make sure its post
 	if req.Method != "POST" {

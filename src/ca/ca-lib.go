@@ -1,7 +1,5 @@
-/*
-*  Symbios Server
-*  Author: Dario Nascimento
- */
+// Package ca : Symbios Certificate Authority
+// Author: Dario Nascimento
 package ca
 
 import (
@@ -9,9 +7,9 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/dnascimento/symbios/src/container"
 	"github.com/dnascimento/symbios/src/logger"
 	"github.com/dnascimento/symbios/src/pkix"
+	"github.com/dnascimento/symbios/src/util"
 )
 
 var userCertificate *pkix.Certificate
@@ -19,13 +17,14 @@ var caKey *pkix.Key
 var caCertificate *pkix.Certificate
 var caInfo *pkix.CertificateAuthorityInfo
 var jtiCache map[string]float64
-var caIpList []string
+var caIPList []string
 var caDomainList []string
 
 func init() {
 	jtiCache = make(map[string]float64)
 }
 
+//NewRootCertificate creates a new certificate authority root certificate
 func NewRootCertificate(keylength int, expires time.Time, organization, country string) (*pkix.Key, *pkix.Certificate, *pkix.CertificateAuthorityInfo, error) {
 	cKey, err := pkix.CreateRSAKey(keylength)
 	if err != nil {
@@ -44,14 +43,17 @@ func NewRootCertificate(keylength int, expires time.Time, organization, country 
 	return caKey, caCertificate, caInfo, nil
 }
 
+//GetCertificateFingerprint returns the fingerprint (SHA256) of root-certificate
 func GetCertificateFingerprint() ([]byte, error) {
 	return caCertificate.Fingerprint()
 }
 
+//GetRootCertificate returns the root-certificate encoded in PEM
 func GetRootCertificate() ([]byte, error) {
 	return caCertificate.Export()
 }
 
+//ValidateToken validate a token signed by the given certificate with the subject hostname
 func ValidateToken(userToken string, certificate *pkix.Certificate, hostname *string) error {
 	cert, err := certificate.Export()
 	if err != nil {
@@ -80,20 +82,22 @@ func ValidateToken(userToken string, certificate *pkix.Certificate, hostname *st
 
 	if err == nil && token.Valid {
 		return nil
-	} else {
-		return fmt.Errorf("Token is invalid, %s", err)
 	}
+	return fmt.Errorf("Token is invalid, %s", err)
 }
 
+//lookupUserCertificate returns the user certificate in use encoded in PEM
 func lookupUserCertificate(username string) ([]byte, error) {
 	return userCertificate.Export()
 }
 
+//SetUserCertificate defines the current user certificate
 func SetUserCertificate(cert *pkix.Certificate) {
 	//TODO multiple user
 	userCertificate = cert
 }
 
+//SignCSR signs the Certificate Signing Request if the token is valid, generating a certificate with time-to-live ttl
 func SignCSR(csr *pkix.CertificateSigningRequest, token string, ttl int) (*pkix.Certificate, error) {
 	x509Csr, err := csr.GetRawCertificateSigningRequest()
 	if err != nil {
@@ -116,7 +120,7 @@ func SignCSR(csr *pkix.CertificateSigningRequest, token string, ttl int) (*pkix.
 		ipListStr = append(ipListStr, s)
 	}
 
-	if existsInArray(ipListStr, caIpList) {
+	if existsInArray(ipListStr, caIPList) {
 		return nil, fmt.Errorf("ALERT! Someone is trying to impersonate the CA HTTPS! Same IP: %s. ", ipList)
 	}
 
@@ -131,7 +135,8 @@ func SignCSR(csr *pkix.CertificateSigningRequest, token string, ttl int) (*pkix.
 	return certificate, nil
 }
 
-func CreateHttpsKeys(outKey, outCert *string) error {
+//CreateHTTPSKeys generates a key-pair signed by the CA to be used in its HTTPS server
+func CreateHTTPSKeys(outKey, outCert *string) error {
 	logger.Info.Println("Creating https key")
 
 	keyLength := 4096
@@ -141,11 +146,11 @@ func CreateHttpsKeys(outKey, outCert *string) error {
 		return err
 	}
 
-	caIpList, caDomainList, err = container.GetHostnameAndIp()
+	caIPList, caDomainList, err = util.GetHostnameAndIp()
 	// create csr
 	name := "ca"
-	ipListStr := container.ListToString(caIpList, "")
-	domainListStr := container.ListToString(caDomainList, "")
+	ipListStr := util.ListToString(caIPList, "")
+	domainListStr := util.ListToString(caDomainList, "")
 	organization := "symbios"
 	country := "PT-PT"
 	ttl := 2 // years
@@ -169,6 +174,7 @@ func CreateHttpsKeys(outKey, outCert *string) error {
 	return nil
 }
 
+//existsInArray returns true if the interception of a1 and a2 is not empty
 func existsInArray(a1, a2 []string) bool {
 	m := make(map[string]bool)
 	for _, v := range a1 {

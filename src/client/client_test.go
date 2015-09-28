@@ -1,3 +1,5 @@
+// Package client  - Symbios user-side client
+// Author: Dario Nascimento
 package client
 
 import (
@@ -20,12 +22,12 @@ func TestClient(t *testing.T) {
 	logger.InitLogs(os.Stdout, os.Stdout, os.Stderr)
 
 	keyLength := 2048
-	username := "symbios"
+	hostname := "symbios"
 	privateKeyPath := "id_test"
 	expires := time.Now().AddDate(1, 0, 0).UTC()
 
 	// generate private key
-	userKeyBase64, _, _, err := NewUserKey(&username, keyLength, &expires, &privateKeyPath)
+	userKeyBase64, _, _, err := NewUserKey(&hostname, keyLength, &expires, &privateKeyPath)
 	if err != nil {
 		t.Error(err)
 	}
@@ -54,29 +56,29 @@ func TestClient(t *testing.T) {
 	tokenExpires := time.Duration(time.Second * 10)
 
 	// generate token using private key
-	userToken, err := NewTokenUsingPrivateKeyFile(privateKeyPath, username, &tokenExpires)
+	userToken, err := NewTokenUsingPrivateKeyFile(privateKeyPath, hostname, tokenExpires)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if err := ca.ValidateToken(*userToken, userCert); err != nil {
+	if err := ca.ValidateToken(*userToken, userCert, &hostname); err != nil {
 		t.Fatalf("Token validation failed: %s", err)
 	}
 
 	// replay attack
-	if err := ca.ValidateToken(*userToken, userCert); err == nil {
+	if err := ca.ValidateToken(*userToken, userCert, &hostname); err == nil {
 		t.Fatalf("Replay attack detection fail: %s", err)
 	}
 
 	// expired token
 	tokenExpires = time.Duration(time.Second * 1)
-	userToken, err = NewTokenUsingPrivateKeyFile(privateKeyPath, username, &tokenExpires)
+	userToken, err = NewTokenUsingPrivateKeyFile(privateKeyPath, hostname, tokenExpires)
 	if err != nil {
 		t.Error(err)
 	}
 	time.Sleep(time.Duration(time.Second * 5))
 
-	if err := ca.ValidateToken(*userToken, userCert); err == nil {
+	if err := ca.ValidateToken(*userToken, userCert, &hostname); err == nil {
 		t.Fatalf("Expired token detection fail: %s", err)
 	}
 

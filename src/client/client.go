@@ -1,7 +1,5 @@
-/*
-*  Symbios Server
-*  Author: Dario Nascimento
- */
+// Package client  - Symbios user-side client
+// Author: Dario Nascimento
 package client
 
 import (
@@ -25,7 +23,7 @@ func NewUserKey(username *string, keyLength int, expires *time.Time, out *string
 	// generate keys
 	keys, err := pkix.CreateRSAKey(keyLength)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("Failed to create key:", err)
+		return nil, nil, nil, fmt.Errorf("Failed to create key: %s", err)
 	}
 
 	// create user self-signed certificate
@@ -33,19 +31,19 @@ func NewUserKey(username *string, keyLength int, expires *time.Time, out *string
 
 	if out != nil {
 		if err := keys.SavePrivate(out); err != nil {
-			return nil, nil, nil, fmt.Errorf("failed to write private key:", err)
+			return nil, nil, nil, fmt.Errorf("failed to write private key: %s", err)
 		}
 
 		certOut := (*out) + ".crt"
 		if err := userCert.Save(&certOut); err != nil {
-			return nil, nil, nil, fmt.Errorf("failed to write public key certificate:", err)
+			return nil, nil, nil, fmt.Errorf("failed to write public key certificate: %s", err)
 		}
 	}
 
 	// encode public key
 	encodedCertificate, err := userCert.EncodeBase64()
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to encode user certificate:", err)
+		return nil, nil, nil, fmt.Errorf("failed to encode user certificate: %s", err)
 	}
 
 	return encodedCertificate, userCert, keys, nil
@@ -81,6 +79,7 @@ func NewToken(privateKey []byte, hostname string, expires time.Duration) (*strin
 	return &tokenString, err
 }
 
+//GetCACertHash fetches the certificate authority
 func GetCACertHash(endpoint *string) (*[]byte, error) {
 	//logger.Info.Printf("get ca certificate at: %s", *endpoint)
 	// ignore TLS because we don't know the destination yet
@@ -103,6 +102,7 @@ func GetCACertHash(endpoint *string) (*[]byte, error) {
 	return &hashBytes, nil
 }
 
+//GetCACertHashEncoded fetches the root-certificate fingerprint (SHA256) from CA
 func GetCACertHashEncoded(endpoint *string) (*string, error) {
 	hash, err := GetCACertHash(endpoint)
 	if err != nil {

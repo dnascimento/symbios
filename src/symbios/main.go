@@ -107,7 +107,7 @@ func caCmd() {
 
 	caCmd.Parse(os.Args[2:])
 
-	if err := ca.HttpServer(*port, *userKey, *keylength, *organization, *country, expires); err != nil {
+	if err := ca.HTTPServer(*port, *userKey, *keylength, *organization, *country, expires); err != nil {
 		logger.Error.Printf("Failed to start Certificate Authority HTTP Server: %s", err)
 		os.Exit(2)
 	}

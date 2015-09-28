@@ -1,3 +1,5 @@
+// Package container  - Symbios user-side client
+// Author: Dario Nascimento
 package container
 
 import (
@@ -58,7 +60,7 @@ func TestContainer(t *testing.T) {
 		t.Error(err)
 	}
 
-	//setup mockHttpServer
+	//setup mockHTTPServer
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// /cert
 		if r.URL.String() == "/v1/cert" {
