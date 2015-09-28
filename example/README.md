@@ -41,7 +41,7 @@ http-server  9000 /etc/secret/id.pem /etc/secret/id_cert.pem /etc/secret/ca_cert
 
 On client container:
 ```
-http-client  server:9000 /etc/secret/id.pem /etc/secret/id_cert.pem /etc/secret/ca_cert.pem 
+http-client  https://server:9000 /etc/secret/id.pem /etc/secret/id_cert.pem /etc/secret/ca_cert.pem 
 ```
 
 

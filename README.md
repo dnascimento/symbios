@@ -29,7 +29,7 @@ docker run -i -t --name ca -e "SYM_USER_KEY=<key obtained previously>" symbios/c
 
 Get Certificate Authority root-certificate fingerprint
 ```
-docker run -i -t --link ca:ca symbios/base symbios ca-hash --host ca > fingerprint
+docker run -i -t --link ca:ca symbios/base symbios ca-hash --host ca | tee fingerprint
 ```
 
 Keep the fingerprint file. It authenticates the certificate authority that you lunched.
