@@ -98,7 +98,7 @@ func SetUserCertificate(cert *pkix.Certificate) {
 }
 
 //SignCSR signs the Certificate Signing Request if the token is valid, generating a certificate with time-to-live ttl
-func SignCSR(csr *pkix.CertificateSigningRequest, token string, ttl int) (*pkix.Certificate, error) {
+func SignCSR(csr *pkix.CertificateSigningRequest, token string, days int) (*pkix.Certificate, error) {
 	x509Csr, err := csr.GetRawCertificateSigningRequest()
 	if err != nil {
 		return nil, err
@@ -128,7 +128,7 @@ func SignCSR(csr *pkix.CertificateSigningRequest, token string, ttl int) (*pkix.
 		return nil, fmt.Errorf("ALERT! Someone is trying to impersonate the CA HTTPS! Same domain: %s. ", domainList)
 	}
 
-	certificate, err := pkix.CreateCertificateHost(caCertificate, caInfo, caKey, csr, ttl)
+	certificate, err := pkix.CreateCertificateHost(caCertificate, caInfo, caKey, csr, days)
 	if err != nil {
 		return nil, err
 	}

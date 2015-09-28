@@ -104,10 +104,11 @@ func caCmd() {
 	var country = caCmd.String("country", "PT-PT", "country")
 	var expiresDays = caCmd.Int("days", daysInTenYears, "User key expires after (days)")
 	var expires = time.Now().AddDate(0, 0, *expiresDays).UTC()
+	var expiresContainer = caCmd.Int("ttl", daysInTenYears, "Container certificate expires")
 
 	caCmd.Parse(os.Args[2:])
 
-	if err := ca.HTTPServer(*port, *userKey, *keylength, *organization, *country, expires); err != nil {
+	if err := ca.HTTPServer(*port, *userKey, *keylength, *organization, *country, expires, *expiresContainer); err != nil {
 		logger.Error.Printf("Failed to start Certificate Authority HTTP Server: %s", err)
 		os.Exit(2)
 	}
@@ -129,8 +130,8 @@ func containerCmd() {
 	var keysize = containerCmd.Int("size", 2048, "The size of the private key e.g. 1024, 2048 (default), 4096 .")
 
 	var cn = containerCmd.String("cn", "", "Default common name.")
-	var ip_list = containerCmd.String("ip_list", "", "IP List.")
-	var domain_list = containerCmd.String("domain_list", "", "Domain List.")
+	var ipList = containerCmd.String("ip_list", "", "IP List.")
+	var domainList = containerCmd.String("domain_list", "", "Domain List.")
 	var organization = containerCmd.String("organization", "symbios", "Organization.")
 	var country = containerCmd.String("country", "US", "Country.")
 
@@ -148,7 +149,7 @@ func containerCmd() {
 		os.Exit(2)
 	}
 
-	if err := container.AuthenticateAndSave(&endpoint, token, keyOut, crtOut, caCertOut, *keysize, cn, ip_list, domain_list, organization, country, &caHash); err != nil {
+	if err := container.AuthenticateAndSave(&endpoint, token, keyOut, crtOut, caCertOut, *keysize, cn, ipList, domainList, organization, country, &caHash); err != nil {
 		logger.Error.Printf("Failed to authenticate this container: %s", err)
 		os.Exit(2)
 	}

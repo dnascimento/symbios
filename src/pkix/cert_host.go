@@ -60,7 +60,7 @@ var (
 
 // CreateCertificateHost creates certificate for host.
 // The arguments include CA certificate, CA certificate info, CA key, certificate request.
-func CreateCertificateHost(crtAuth *Certificate, info *CertificateAuthorityInfo, keyAuth *Key, csr *CertificateSigningRequest, years int) (*Certificate, error) {
+func CreateCertificateHost(crtAuth *Certificate, info *CertificateAuthorityInfo, keyAuth *Key, csr *CertificateSigningRequest, days int) (*Certificate, error) {
 	hostTemplate.SerialNumber.Set(info.SerialNumber)
 	info.IncSerialNumber()
 
@@ -71,7 +71,7 @@ func CreateCertificateHost(crtAuth *Certificate, info *CertificateAuthorityInfo,
 
 	hostTemplate.Subject = rawCsr.Subject
 
-	hostTemplate.NotAfter = time.Now().AddDate(years, 0, 0).UTC()
+	hostTemplate.NotAfter = time.Now().AddDate(0, 0, days).UTC()
 
 	hostTemplate.SubjectKeyId, err = GenerateSubjectKeyId(rawCsr.PublicKey)
 	if err != nil {
@@ -93,8 +93,6 @@ func CreateCertificateHost(crtAuth *Certificate, info *CertificateAuthorityInfo,
 
 	return NewCertificateFromDER(crtHostBytes), nil
 }
-
-
 
 //CreateUserCertificate create a simple self-signed cert
 func CreateUserCertificate(key *Key, username string, expires time.Time) (*Certificate, error) {

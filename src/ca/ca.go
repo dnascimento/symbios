@@ -16,8 +16,12 @@ import (
 	"github.com/dnascimento/symbios/src/pkix"
 )
 
+var certTTLDays int
+
 //HTTPServer is the main CA method: read the user key, create a root certificate and start the CA HTTTS server
-func HTTPServer(port int, userKey string, keylength int, organization string, country string, expires time.Time) error {
+func HTTPServer(port int, userKey string, keylength int, organization string, country string, expires time.Time, days int) error {
+
+	certTTLDays = days
 
 	// read user pubKey
 	certificate, err := readUserCertificate(userKey)
@@ -115,9 +119,7 @@ func HandleCSR(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//TODO
-	ttl := 25
-	cert, err := SignCSR(csr, token, ttl)
+	cert, err := SignCSR(csr, token, certTTLDays)
 	if err != nil {
 		logger.Error.Printf("%s\n", err.Error())
 		fmt.Fprintln(w, err.Error())
